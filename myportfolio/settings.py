@@ -263,3 +263,20 @@ DATETIME_FORMAT = 'M d, Y H:i'
 # File upload validation
 CONTENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 MAX_UPLOAD_SIZE = 5242880  # 5MB
+
+
+
+
+import environ
+
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+DATABASES = {
+    'default': env.db()  # parses DATABASE_URL
+}
