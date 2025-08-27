@@ -1,0 +1,697 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact - Nirnaya Khadka{% endblock %}
+
+{% block meta_description %}Get in touch with Nirnaya Khadka - AI & Machine Learning Specialist. Contact for project collaborations, consultations, and opportunities.{% endblock %}
+
+{% block extra_css %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        overflow-x: hidden;
+    }
+
+    /* Animated background particles */
+    .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+        50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+    }
+
+    /* Main container */
+    .contact-container {
+        position: relative;
+        z-index: 2;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .contact-wrapper {
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+    }
+
+    /* Contact info section */
+    .contact-info {
+        color: white;
+        padding: 2rem;
+    }
+
+    .contact-info h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ffffff, #a8edea);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+        from { filter: drop-shadow(0 0 10px rgba(168, 237, 234, 0.3)); }
+        to { filter: drop-shadow(0 0 20px rgba(168, 237, 234, 0.6)); }
+    }
+
+    .contact-info p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        line-height: 1.6;
+    }
+
+    .contact-details {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .contact-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .contact-item-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        font-size: 1.5rem;
+    }
+
+    .contact-item-content h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .contact-item-content p {
+        font-size: 0.95rem;
+        opacity: 0.8;
+        margin: 0;
+    }
+
+    /* Contact form */
+    .contact-form {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        padding: 3rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .contact-form::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent);
+        pointer-events: none;
+    }
+
+    .form-group {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .form-group label {
+        position: absolute;
+        top: 1rem;
+        left: 1.5rem;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 1.2rem 1.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        color: white;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: rgba(168, 237, 234, 0.8);
+        box-shadow: 0 0 20px rgba(168, 237, 234, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .form-group input:focus + label,
+    .form-group input:not(:placeholder-shown) + label,
+    .form-group textarea:focus + label,
+    .form-group textarea:not(:placeholder-shown) + label {
+        top: -0.5rem;
+        left: 1rem;
+        font-size: 0.85rem;
+        color: #a8edea;
+        background: rgba(102, 126, 234, 0.8);
+        padding: 0.2rem 0.5rem;
+        border-radius: 8px;
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        border-radius: 15px;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .submit-btn:hover::before {
+        left: 100%;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Contact method buttons */
+    .contact-methods {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .contact-method-btn {
+        flex: 1;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+
+    .contact-method-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(168, 237, 234, 0.8);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .email-btn {
+        background: linear-gradient(135deg, #ea4335, #d33b2c);
+    }
+
+    .whatsapp-btn {
+        background: linear-gradient(135deg, #25d366, #128c7e);
+    }
+
+    /* Social links */
+    .social-links {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .social-link {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        color: white;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .social-link:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-5px) scale(1.1);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .contact-wrapper {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .contact-info h1 {
+            font-size: 2.5rem;
+        }
+
+        .contact-form {
+            padding: 2rem;
+        }
+
+        .contact-info {
+            order: 2;
+        }
+
+        .contact-form {
+            order: 1;
+        }
+
+        .contact-methods {
+            flex-direction: column;
+        }
+    }
+
+    /* Loading animation for form submission */
+    .loading {
+        position: relative;
+        pointer-events: none;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        margin: auto;
+        border: 2px solid transparent;
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Success message */
+    .success-message {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.5);
+        color: #4caf50;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        text-align: center;
+        display: none;
+    }
+
+    .error-message {
+        background: rgba(244, 67, 54, 0.2);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+        color: #f44336;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        text-align: center;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Animated background particles -->
+<div class="particles" id="particles"></div>
+
+<div class="contact-container">
+    <div class="contact-wrapper">
+        <!-- Contact Information -->
+        <div class="contact-info">
+            <h1>Let's Connect</h1>
+            <p>Ready to bring your AI vision to life? Let's discuss how we can work together to create intelligent solutions that make a difference.</p>
+            
+            <div class="contact-details">
+                <a href="mailto:nirnayakhadka98@gmail.com" class="contact-item">
+                    <div class="contact-item-icon">
+                        📧
+                    </div>
+                    <div class="contact-item-content">
+                        <h3>Email</h3>
+                        <p>nirnayakhadka98@gmail.com</p>
+                    </div>
+                </a>
+                
+                <a href="https://wa.me/9779849614166" class="contact-item" target="_blank">
+                    <div class="contact-item-icon">
+                        📱
+                    </div>
+                    <div class="contact-item-content">
+                        <h3>WhatsApp</h3>
+                        <p>+977 9849614166</p>
+                    </div>
+                </a>
+                
+                <div class="contact-item">
+                    <div class="contact-item-icon">
+                        📍
+                    </div>
+                    <div class="contact-item-content">
+                        <h3>Location</h3>
+                        <p>Patan, Bagmati Province, Nepal</p>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-item-icon">
+                        ⏰
+                    </div>
+                    <div class="contact-item-content">
+                        <h3>Response Time</h3>
+                        <p>Usually within 24 hours</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/nirnaya-khadka-a57464305/" class="social-link" title="LinkedIn">💼</a>
+                <a href="https://github.com/nirnayakhadka" class="social-link" title="GitHub">💻</a>
+                <a href="https://www.instagram.com/nirnaya_khadka/" class="social-link" title="Instagram">📷</a>
+                <a href="https://www.facebook.com/nirnaya.khadka.2025" class="social-link" title="Facebook">📘</a>
+            </div>
+        </div>
+        
+        <!-- Contact Form -->
+        <div class="contact-form">
+            <div class="success-message" id="successMessage">
+                Thank you! Your message has been sent successfully.
+            </div>
+            <div class="error-message" id="errorMessage">
+                Sorry, there was an error sending your message. Please try again.
+            </div>
+            
+            <!-- Quick Contact Methods -->
+            <div class="contact-methods">
+                <button type="button" class="contact-method-btn email-btn" onclick="sendEmailDirectly()">
+                    📧 Send Email
+                </button>
+                <button type="button" class="contact-method-btn whatsapp-btn" onclick="sendWhatsAppMessage()">
+                    💬 WhatsApp
+                </button>
+            </div>
+            
+            <form id="contactForm" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" id="name" name="name" placeholder=" " required>
+                    <label for="name">Your Name</label>
+                </div>
+                
+                <div class="form-group">
+                    <input type="email" id="email" name="email" placeholder=" " required>
+                    <label for="email">Email Address</label>
+                </div>
+                
+                <div class="form-group">
+                    <input type="text" id="subject" name="subject" placeholder=" " required>
+                    <label for="subject">Subject</label>
+                </div>
+                
+                <div class="form-group">
+                    <textarea id="message" name="message" placeholder=" " required></textarea>
+                    <label for="message">Your Message</label>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span>Send Message</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Create animated particles
+    function createParticles() {
+        const particles = document.getElementById('particles');
+        const particleCount = 50;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 6 + 's';
+            particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            particles.appendChild(particle);
+        }
+    }
+    
+    // Send email directly with form data
+    function sendEmailDirectly() {
+        const name = document.getElementById('name').value || 'Nirnaya khadka';
+        const email = document.getElementById('email').value || 'nirnayakhadka98@gmail.com';
+        const subject = document.getElementById('subject').value || 'Inquiry from Website';
+        const message = document.getElementById('message').value || 'Hello Nirnaya,\n\nI would like to get in touch regarding...';
+        
+        const emailBody = encodeURIComponent(`
+Hello Nirnaya,
+
+Name: ${name}
+Email: ${email}
+
+Message:
+${message}
+
+Best regards,
+${name}
+        `);
+        
+        const emailUrl = `mailto:nirnayakhadka98@gmail.com?subject=${encodeURIComponent(subject)}&body=${emailBody}`;
+        window.location.href = emailUrl;
+    }
+    
+    // Send WhatsApp message with form data
+    function sendWhatsAppMessage() {
+        const name = document.getElementById('name').value || 'Visitor';
+        const email = document.getElementById('email').value || 'Not provided';
+        const subject = document.getElementById('subject').value || 'Website Inquiry';
+        const message = document.getElementById('message').value || 'Hello! I would like to get in touch.';
+        
+        const whatsappMessage = encodeURIComponent(`
+Hello Nirnaya! 👋
+
+*Name:* ${name}
+*Email:* ${email}
+*Subject:* ${subject}
+
+*Message:*
+${message}
+
+I found you through your website and would like to connect!
+        `);
+        
+        const whatsappUrl = `https://wa.me/9779849614166?text=${whatsappMessage}`;
+        window.open(whatsappUrl, '_blank');
+    }
+    
+    // Form submission handling
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // Hide previous messages
+        successMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+        
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitBtn.innerHTML = '<span>Sending...</span>';
+        
+        // Simulate form submission (replace with actual Django form handling)
+        try {
+            const formData = new FormData(this);
+            
+            // Replace this with your actual form submission logic
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            if (response.ok) {
+                successMessage.style.display = 'block';
+                this.reset();
+                
+                // Animate success
+                successMessage.style.animation = 'slideInDown 0.5s ease';
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        } catch (error) {
+            errorMessage.style.display = 'block';
+            errorMessage.style.animation = 'slideInDown 0.5s ease';
+        } finally {
+            // Reset button state
+            submitBtn.classList.remove('loading');
+            submitBtn.innerHTML = '<span>Send Message</span>';
+        }
+    });
+    
+    // Floating label animation
+    document.querySelectorAll('.form-group input, .form-group textarea').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentNode.classList.add('focused');
+        });
+        
+        input.addEventListener('blur', function() {
+            if (!this.value) {
+                this.parentNode.classList.remove('focused');
+            }
+        });
+    });
+    
+    // Initialize particles on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        createParticles();
+        
+        // Add entrance animations
+        const elements = document.querySelectorAll('.contact-info, .contact-form');
+        elements.forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                el.style.transition = 'all 0.8s ease';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 200);
+        });
+    });
+    
+    // Parallax effect for particles
+    document.addEventListener('mousemove', function(e) {
+        const particles = document.querySelectorAll('.particle');
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+        
+        particles.forEach((particle, index) => {
+            const speed = (index % 5 + 1) * 0.5;
+            const xPos = (x - 0.5) * speed;
+            const yPos = (y - 0.5) * speed;
+            
+            particle.style.transform = `translate(${xPos}px, ${yPos}px)`;
+        });
+    });
+</script>
+
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.getElementById('successMessage').style.display = 'block';
+                });
+            </script>
+        {% elif message.tags == 'error' %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.getElementById('errorMessage').style.display = 'block';
+                });
+            </script>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

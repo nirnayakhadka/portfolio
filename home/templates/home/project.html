@@ -1,714 +1,386 @@
-<!-- // /home/nirnaya/myportfolio/home/static/home/js/project.js
+{% extends 'base.html' %}
+{% load static %}
 
-class ProjectsManager {
-    constructor() {
-        this.projectsGrid = document.getElementById('projectsGrid');
-        this.currentFilter = 'all';
-        this.currentSort = 'date';
-        this.projects = [];
-        this.isLoading = false;
-    }
+{% block title %}Projects - Nirnaya's Portfolio{% endblock %}
 
-    // Initialize the projects manager
-    init() {
-        this.loadProjects();
-        this.setupEventListeners();
-    }
+{% block meta_description %}Explore Nirnaya's innovative projects and cutting-edge development work. View live demos, source code, and technical details.{% endblock %}
 
-    // Setup event listeners
-    setupEventListeners() {
-        // Filter buttons
-        const filterButtons = document.querySelectorAll('[data-filter]');
-        filterButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                const filter = e.target.dataset.filter;
-                this.filterProjects(filter);
-                this.updateActiveFilter(e.target);
-            });
-        });
-
-        // Sort dropdown
-        const sortSelect = document.getElementById('projectSort');
-        if (sortSelect) {
-            sortSelect.addEventListener('change', (e) => {
-                this.sortProjects(e.target.value);
-            });
-        }
-
-        // Search input
-        const searchInput = document.getElementById('projectSearch');
-        if (searchInput) {
-            let searchTimeout;
-            searchInput.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    this.searchProjects(e.target.value);
-                }, 300);
-            });
-        }
-
-        // View more button
-        const viewMoreBtn = document.getElementById('viewMoreBtn');
-        if (viewMoreBtn) {
-            viewMoreBtn.addEventListener('click', () => this.loadMoreProjects());
-        }
-    }
-
-    // Load projects from Django backend
-    async loadProjects() {
-        if (this.isLoading) return;
-        
-        this.isLoading = true;
-        this.showLoadingSkeleton();
-
-        try {
-            // Replace with your Django endpoint
-            const response = await fetch('/api/projects/');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.projects = data.projects;
-                this.renderProjects(this.projects);
-            } else {
-                this.showError('Failed to load projects');
-            }
-        } catch (error) {
-            console.error('Error loading projects:', error);
-            this.showError('Error loading projects. Please try again.');
-        } finally {
-            this.isLoading = false;
-        }
-    }
-
-    // Show loading skeleton
-    showLoadingSkeleton() {
-        if (!this.projectsGrid) return;
-        
-        const skeletonHTML = Array(6).fill(0).map(() => `
-            <div class="project-card loading-skeleton">
-                <div class="project-image loading-skeleton" style="height: 250px;"></div>
-                <div class="project-content">
-                    <div class="loading-skeleton" style="height: 24px; margin-bottom: 12px; border-radius: 4px;"></div>
-                    <div class="loading-skeleton" style="height: 16px; margin-bottom: 8px; border-radius: 4px; width: 80%;"></div>
-                    <div class="loading-skeleton" style="height: 16px; margin-bottom: 16px; border-radius: 4px; width: 60%;"></div>
-                    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                        <div class="loading-skeleton" style="height: 24px; width: 60px; border-radius: 12px;"></div>
-                        <div class="loading-skeleton" style="height: 24px; width: 80px; border-radius: 12px;"></div>
-                        <div class="loading-skeleton" style="height: 24px; width: 70px; border-radius: 12px;"></div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-        
-        this.projectsGrid.innerHTML = skeletonHTML;
-    }
-
-    // Render projects
-    renderProjects(projects) {
-        if (!this.projectsGrid) return;
-        
-        if (projects.length === 0) {
-            this.showEmptyState();
-            return;
-        }
-
-        const projectsHTML = projects.map((project, index) => 
-            this.renderProjectCard(project, index)
-        ).join('');
-        
-        this.projectsGrid.innerHTML = projectsHTML;
-        this.animateCards();
-    }
-
-    // Render individual project card
-    renderProjectCard(project, index) {
-        const statusClass = `status-${project.status.toLowerCase()}`;
-        const formattedDate = this.formatDate(project.created_date);
-        const technologies = project.technologies || [];
-        
-        return `
-            <div class="project-card" 
-                 data-project-id="${project.id}" 
-                 data-status="${project.status}"
-                 data-technologies="${technologies.join(',').toLowerCase()}"
-                 style="animation-delay: ${index * 0.1}s">
-                
-                <div class="project-image">
-                    <img src="${project.image || '/static/home/images/default-project.jpg'}" 
-                         alt="${project.title}" 
-                         loading="lazy"
-                         onerror="this.src='/static/home/images/default-project.jpg'">
-                    
-                    <div class="project-overlay">
-                        <button class="view-project-btn" onclick="projectsManager.viewProject(${project.id})">
-                            <i class="fas fa-eye"></i>
-                            View Details
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="project-content">
-                    <div class="project-header">
-                        <h3 class="project-title">${this.escapeHtml(project.title)}</h3>
-                        <span class="project-status ${statusClass}">
-                            ${project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                        </span>
-                    </div>
-                    
-                    <p class="project-description">
-                        ${this.truncateText(this.escapeHtml(project.description), 120)}
-                    </p>
-                    
-                    <div class="project-tech">
-                        ${technologies.map(tech => 
-                            `<span class="tech-tag" onclick="projectsManager.filterByTechnology('${tech}')">${tech}</span>`
-                        ).join('')}
-                    </div>
-                    
-                    <div class="project-footer">
-                        <div class="project-date">
-                            <i class="fas fa-calendar-alt"></i>
-                            ${formattedDate}
-                        </div>
-                        
-                        <div class="project-links">
-                            ${project.github_url ? `
-                                <a href="${project.github_url}" 
-                                   class="project-link github" 
-                                   title="View Source Code" 
-                                   target="_blank">
-                                    <i class="fab fa-github"></i>
-                                </a>
-                            ` : ''}
-                            
-                            ${project.demo_url ? `
-                                <a href="${project.demo_url}" 
-                                   class="project-link demo" 
-                                   title="Live Demo" 
-                                   target="_blank">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            ` : ''}
-                            
-                            <button class="project-link info" 
-                                    title="View Details" 
-                                    onclick="projectsManager.viewProject(${project.id})">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // Filter projects by status
-    filterProjects(status = 'all') {
-        this.currentFilter = status;
-        
-        let filteredProjects = this.projects;
-        
-        if (status !== 'all') {
-            filteredProjects = this.projects.filter(project => 
-                project.status.toLowerCase() === status.toLowerCase()
-            );
-        }
-        
-        this.renderProjects(filteredProjects);
-    }
-
-    // Filter projects by technology
-    filterByTechnology(tech) {
-        const filteredProjects = this.projects.filter(project => 
-            project.technologies && project.technologies.some(technology => 
-                technology.toLowerCase().includes(tech.toLowerCase())
-            )
-        );
-        
-        this.renderProjects(filteredProjects);
-        this.updateSearchInput(tech);
-    }
-
-    // Search projects
-    searchProjects(query) {
-        if (!query.trim()) {
-            this.filterProjects(this.currentFilter);
-            return;
-        }
-
-        const searchTerm = query.toLowerCase();
-        const filteredProjects = this.projects.filter(project => 
-            project.title.toLowerCase().includes(searchTerm) ||
-            project.description.toLowerCase().includes(searchTerm) ||
-            (project.technologies && project.technologies.some(tech => 
-                tech.toLowerCase().includes(searchTerm)
-            ))
-        );
-        
-        this.renderProjects(filteredProjects);
-    }
-
-    // Sort projects
-    sortProjects(sortBy) {
-        this.currentSort = sortBy;
-        let sortedProjects = [...this.projects];
-        
-        switch (sortBy) {
-            case 'date':
-                sortedProjects.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-                break;
-            case 'title':
-                sortedProjects.sort((a, b) => a.title.localeCompare(b.title));
-                break;
-            case 'status':
-                sortedProjects.sort((a, b) => a.status.localeCompare(b.status));
-                break;
-        }
-        
-        this.renderProjects(sortedProjects);
-    }
-
-    // View project details
-    viewProject(projectId) {
-        const project = this.projects.find(p => p.id === projectId);
-        if (!project) return;
-
-        // Option 1: Redirect to project detail page
-        // window.location.href = `/projects/${projectId}/`;
-        
-        // Option 2: Open modal with project details
-        this.openProjectModal(project);
-        
-        // Option 3: Open demo URL
-        // if (project.demo_url) {
-        //     window.open(project.demo_url, '_blank');
-        // }
-    }
-
-    // Open project modal
-    openProjectModal(project) {
-        // Create modal if it doesn't exist
-        let modal = document.getElementById('projectModal');
-        if (!modal) {
-            modal = this.createProjectModal();
-            document.body.appendChild(modal);
-        }
-
-        // Populate modal with project data
-        this.populateModal(project);
-        
-        // Show modal
-        modal.classList.add('active');
-        document.body.classList.add('modal-open');
-    }
-
-    // Create project modal
-    createProjectModal() {
-        const modal = document.createElement('div');
-        modal.id = 'projectModal';
-        modal.className = 'project-modal';
-        modal.innerHTML = `
-            <div class="modal-backdrop" onclick="projectsManager.closeModal()"></div>
-            <div class="modal-container">
-                <div class="modal-header">
-                    <h2 class="modal-title"></h2>
-                    <button class="modal-close" onclick="projectsManager.closeModal()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-content">
-                    <div class="modal-image-container">
-                        <img class="modal-image" src="" alt="">
-                    </div>
-                    <div class="modal-details">
-                        <div class="modal-status"></div>
-                        <p class="modal-description"></p>
-                        <div class="modal-tech"></div>
-                        <div class="modal-info">
-                            <div class="info-item">
-                                <i class="fas fa-calendar-alt"></i>
-                                <span class="modal-date"></span>
-                            </div>
-                            <div class="modal-links"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        return modal;
-    }
-
-    // Populate modal with project data
-    populateModal(project) {
-        const modal = document.getElementById('projectModal');
-        if (!modal) return;
-
-        modal.querySelector('.modal-title').textContent = project.title;
-        modal.querySelector('.modal-image').src = project.image || '/static/home/images/default-project.jpg';
-        modal.querySelector('.modal-image').alt = project.title;
-        modal.querySelector('.modal-description').textContent = project.description;
-        modal.querySelector('.modal-date').textContent = this.formatDate(project.created_date);
-
-        // Status
-        const statusElement = modal.querySelector('.modal-status');
-        statusElement.className = `modal-status status-${project.status.toLowerCase()}`;
-        statusElement.textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
-
-        // Technologies
-        const techContainer = modal.querySelector('.modal-tech');
-        techContainer.innerHTML = (project.technologies || [])
-            .map(tech => `<span class="tech-tag">${tech}</span>`)
-            .join('');
-
-        // Links
-        const linksContainer = modal.querySelector('.modal-links');
-        const links = [];
-        
-        if (project.github_url) {
-            links.push(`<a href="${project.github_url}" class="modal-link github" target="_blank">
-                <i class="fab fa-github"></i> Source Code
-            </a>`);
-        }
-        
-        if (project.demo_url) {
-            links.push(`<a href="${project.demo_url}" class="modal-link demo" target="_blank">
-                <i class="fas fa-external-link-alt"></i> Live Demo
-            </a>`);
-        }
-
-        linksContainer.innerHTML = links.join('');
-    }
-
-    // Close modal
-    closeModal() {
-        const modal = document.getElementById('projectModal');
-        if (modal) {
-            modal.classList.remove('active');
-            document.body.classList.remove('modal-open');
-        }
-    }
-
-    // Show empty state
-    showEmptyState() {
-        this.projectsGrid.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-folder-open"></i>
-                </div>
-                <h3>No Projects Found</h3>
-                <p>Try adjusting your search criteria or filter settings.</p>
-                <button class="btn-primary" onclick="projectsManager.resetFilters()">
-                    Reset Filters
-                </button>
-            </div>
-        `;
-    }
-
-    // Show error message
-    showError(message) {
-        this.projectsGrid.innerHTML = `
-            <div class="error-state">
-                <div class="error-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <h3>Oops! Something went wrong</h3>
-                <p>${message}</p>
-                <button class="btn-primary" onclick="projectsManager.loadProjects()">
-                    Try Again
-                </button>
-            </div>
-        `;
-    }
-
-    // Reset filters
-    resetFilters() {
-        this.currentFilter = 'all';
-        this.currentSort = 'date';
-        
-        // Reset filter buttons
-        const filterButtons = document.querySelectorAll('[data-filter]');
-        filterButtons.forEach(btn => btn.classList.remove('active'));
-        document.querySelector('[data-filter="all"]')?.classList.add('active');
-        
-        // Reset search input
-        const searchInput = document.getElementById('projectSearch');
-        if (searchInput) searchInput.value = '';
-        
-        // Reset sort dropdown
-        const sortSelect = document.getElementById('projectSort');
-        if (sortSelect) sortSelect.value = 'date';
-        
-        // Re-render all projects
-        this.renderProjects(this.projects);
-    }
-
-    // Update active filter button
-    updateActiveFilter(activeButton) {
-        document.querySelectorAll('[data-filter]').forEach(btn => 
-            btn.classList.remove('active')
-        );
-        activeButton.classList.add('active');
-    }
-
-    // Update search input
-    updateSearchInput(value) {
-        const searchInput = document.getElementById('projectSearch');
-        if (searchInput) searchInput.value = value;
-    }
-
-    // Animate cards
-    animateCards() {
-        const cards = document.querySelectorAll('.project-card');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(30px)';
-            card.style.animation = `fadeInUp 0.6s forwards ${index * 0.1}s`;
-        });
-    }
-
-    // Utility functions
-    formatDate(dateString) {
-        const options = { year: 'numeric', month: 'short', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('en-US', options);
-    }
-
-    truncateText(text, maxLength) {
-        if (text.length <= maxLength) return text;
-        return text.slice(0, maxLength).trim() + '...';
-    }
-
-    escapeHtml(unsafe) {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    // Load more projects (for pagination)
-    async loadMoreProjects() {
-        if (this.isLoading) return;
-        
-        // Implementation for loading more projects
-        // This would typically involve fetching the next page of projects
-        console.log('Loading more projects...');
-    }
-
-    // Export project data (utility function)
-    exportProjects() {
-        const dataStr = JSON.stringify(this.projects, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = 'projects.json';
-        link.click();
-    }
+{% block extra_css %}
+<style>
+/* Projects Page Styles */
+.projects-hero {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+    padding: 6rem 0 4rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-// Initialize projects manager when DOM is loaded
-let projectsManager;
-
-document.addEventListener('DOMContentLoaded', function() {
-    projectsManager = new ProjectsManager();
-    projectsManager.init();
-});
-
-// Handle escape key for modal
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && projectsManager) {
-        projectsManager.closeModal();
-    }
-});
-
-// Add CSS for modal (you can move this to your CSS file)
-const modalStyles = `
-<style>
-.project-modal {
-    position: fixed;
+.projects-hero::before {
+    content: '';
+    position: absolute;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="1.5"/></g></svg>');
+    animation: backgroundMove 20s linear infinite;
+}
+
+@keyframes backgroundMove {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(60px) translateY(60px); }
+}
+
+.projects-hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.projects-hero p {
+    font-size: 1.3rem;
+    color: #cbd5e1;
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.projects-controls {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 2rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    transition: all 0.3s ease;
+}
+
+.controls-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-btn {
+    background: rgba(51, 65, 85, 0.8);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.search-sort-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-input {
+    background: rgba(51, 65, 85, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    padding: 10px 16px;
+    border-radius: 25px;
+    width: 250px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-input::placeholder {
+    color: #94a3b8;
+}
+
+.sort-select {
+    background: rgba(51, 65, 85, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+    padding: 10px 16px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    padding: 3rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.project-card {
+    background: rgba(30, 41, 59, 0.95);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+    position: relative;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.project-card:hover {
+    transform: translateY(-10px) rotateX(5deg);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.3);
+    text-decoration: none;
+    color: inherit;
+}
+
+.project-image {
+    position: relative;
+    height: 250px;
+    overflow: hidden;
+}
+
+.project-image img {
     width: 100%;
     height: 100%;
-    z-index: 1000;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.project-card:hover .project-image img {
+    transform: scale(1.1);
+}
+
+.project-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    visibility: hidden;
     transition: all 0.3s ease;
 }
 
-.project-modal.active {
+.project-card:hover .project-overlay {
     opacity: 1;
-    visibility: visible;
 }
 
-.modal-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-}
-
-.modal-container {
-    position: relative;
-    background: rgba(30, 41, 59, 0.95);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    max-width: 800px;
-    max-height: 90vh;
-    width: 90%;
-    overflow-y: auto;
-    transform: scale(0.9);
-    transition: transform 0.3s ease;
-}
-
-.project-modal.active .modal-container {
-    transform: scale(1);
-}
-
-.modal-header {
-    padding: 2rem 2rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-title {
-    color: #f1f5f9;
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-}
-
-.modal-close:hover {
-    color: #f1f5f9;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.modal-content {
-    padding: 2rem;
-}
-
-.modal-image-container {
-    margin-bottom: 2rem;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.modal-image {
-    width: 100%;
-    height: 300px;
-    object-fit: cover;
-}
-
-.modal-details {
-    space-y: 1.5rem;
-}
-
-.modal-status {
-    display: inline-block;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.85rem;
+.view-project-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 24px;
+    border-radius: 25px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 1rem;
-}
-
-.modal-description {
-    color: #cbd5e1;
-    line-height: 1.7;
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.modal-tech {
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
-    margin-bottom: 2rem;
 }
 
-.modal-info {
+.view-project-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.project-content {
+    padding: 1.5rem;
+}
+
+.project-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-bottom: 1rem;
     gap: 1rem;
 }
 
-.info-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #94a3b8;
-    font-size: 0.9rem;
+.project-title {
+    color: #f1f5f9;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
 }
 
-.modal-links {
+.project-status {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.status-completed {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-in-progress {
+    background: rgba(234, 179, 8, 0.2);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.status-planned {
+    background: rgba(168, 85, 247, 0.2);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.status-on-hold {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.project-description {
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.project-tech {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 1.5rem;
 }
 
-.modal-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+.tech-tag {
     background: rgba(102, 126, 234, 0.2);
     color: #e2e8f0;
-    text-decoration: none;
-    border-radius: 25px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
     border: 1px solid rgba(102, 126, 234, 0.3);
-    font-size: 0.9rem;
-    font-weight: 500;
+    cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.modal-link:hover {
+.tech-tag:hover {
     background: rgba(102, 126, 234, 0.3);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
+}
+
+.project-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.project-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.project-links {
+    display: flex;
+    gap: 8px;
+}
+
+.project-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(51, 65, 85, 0.6);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.project-link:hover {
+    background: rgba(102, 126, 234, 0.8);
     color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
-.modal-link.github:hover {
-    background: rgba(51, 51, 51, 0.8);
+.project-link.github:hover {
+    background: #333;
 }
 
-.empty-state, .error-state {
+.project-link.demo:hover {
+    background: #059669;
+}
+
+.project-link.info:hover {
+    background: #0ea5e9;
+}
+
+/* Empty State */
+.empty-state {
     grid-column: 1 / -1;
     text-align: center;
     padding: 4rem 2rem;
     color: #94a3b8;
 }
 
-.empty-icon, .error-icon {
+.empty-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
     color: #64748b;
 }
 
-.empty-state h3, .error-state h3 {
+.empty-state h3 {
     font-size: 1.5rem;
     color: #f1f5f9;
     margin-bottom: 1rem;
@@ -731,26 +403,320 @@ const modalStyles = `
     box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
-body.modal-open {
-    overflow: hidden;
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        padding: 2rem 1rem;
+    }
+    
+    .controls-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .search-sort-group {
+        justify-content: center;
+    }
+    
+    .search-input {
+        width: 200px;
+    }
 }
 
 @media (max-width: 768px) {
-    .modal-container {
-        width: 95%;
-        max-height: 95vh;
+    .projects-hero h1 {
+        font-size: 2.5rem;
     }
     
-    .modal-header, .modal-content {
-        padding: 1.5rem;
+    .projects-hero p {
+        font-size: 1.1rem;
+        padding: 0 1rem;
     }
     
-    .modal-title {
-        font-size: 1.4rem;
+    .projects-grid {
+        grid-template-columns: 1fr;
+        padding: 2rem 1rem;
     }
     
-    .modal-info {
+    .filter-group {
+        justify-content: center;
+    }
+    
+    .project-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 0.5rem;
     }
-} -->
+    
+    .project-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .projects-hero {
+        padding: 4rem 0 3rem;
+    }
+    
+    .projects-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .project-card {
+        margin: 0 0.5rem;
+    }
+    
+    .controls-container {
+        padding: 0 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Projects Hero Section -->
+<section class="projects-hero">
+    <div class="container">
+        <h1>My Projects</h1>
+        <p>Explore my collection of innovative projects, from web applications to mobile apps and everything in between.</p>
+    </div>
+</section>
+
+<!-- Projects Controls -->
+<div class="projects-controls">
+    <div class="controls-container">
+        <div class="controls-row">
+            <!-- Filter Buttons -->
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">All Projects</button>
+                <button class="filter-btn" data-filter="completed">Completed</button>
+                <button class="filter-btn" data-filter="in-progress">In Progress</button>
+                <button class="filter-btn" data-filter="planned">Planned</button>
+            </div>
+            
+            <!-- Search and Sort -->
+            <div class="search-sort-group">
+                <input type="text" id="projectSearch" class="search-input" placeholder="Search projects...">
+                <select id="projectSort" class="sort-select">
+                    <option value="date">Sort by Date</option>
+                    <option value="title">Sort by Title</option>
+                    <option value="status">Sort by Status</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Grid -->
+<div class="projects-grid" id="projectsGrid">
+    {% if projects %}
+        {% for project in projects %}
+        <a href="{{ project.get_absolute_url }}" class="project-card" 
+             data-project-id="{{ project.id }}" 
+             data-status="{{ project.status }}"
+             data-technologies="{% for tech in project.technologies.all %}{{ tech.name|lower }}{% if not forloop.last %},{% endif %}{% endfor %}">
+            
+            <div class="project-image">
+                <img src="{% if project.image %}{{ project.image.url }}{% else %}{% static 'home/images/default-project.jpg' %}{% endif %}" 
+                     alt="{{ project.title }}" 
+                     loading="lazy">
+                
+                <div class="project-overlay">
+                    <div class="view-project-btn">
+                        <i class="fas fa-eye"></i>
+                        View Details
+                    </div>
+                </div>
+            </div>
+            
+            <div class="project-content">
+                <div class="project-header">
+                    <h3 class="project-title">{{ project.title }}</h3>
+                    <span class="project-status status-{{ project.status|lower }}">
+                        {{ project.get_status_display|default:project.status|capfirst }}
+                    </span>
+                </div>
+                
+                <p class="project-description">
+                    {% if project.description|length > 120 %}
+                        {{ project.description|slice:":120"|safe }}...
+                    {% else %}
+                        {{ project.description|safe }}
+                    {% endif %}
+                </p>
+                
+                <div class="project-tech">
+                    {% for tech in project.technologies.all %}
+                        <span class="tech-tag" onclick="filterByTechnology(event, '{{ tech.name }}')">{{ tech.name }}</span>
+                    {% endfor %}
+                </div>
+                
+                <div class="project-footer">
+                    <div class="project-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ project.created_date|date:"M d, Y" }}
+                    </div>
+                    
+                    <div class="project-links">
+                        {% if project.github_url %}
+                            <a href="{{ project.github_url }}" 
+                               class="project-link github" 
+                               title="View Source Code" 
+                               target="_blank"
+                               onclick="event.stopPropagation()">
+                                <i class="fab fa-github"></i>
+                            </a>
+                        {% endif %}
+                        
+                        {% if project.demo_url %}
+                            <a href="{{ project.demo_url }}" 
+                               class="project-link demo" 
+                               title="Live Demo" 
+                               target="_blank"
+                               onclick="event.stopPropagation()">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3>No Projects Found</h3>
+            <p>Check back soon for new projects!</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Load More Button (if using pagination) -->
+{% if projects.has_next %}
+<div style="text-align: center; padding: 2rem;">
+    <button id="viewMoreBtn" class="btn-primary">
+        Load More Projects
+    </button>
+</div>
+{% endif %}
+
+<script>
+// Project filtering and search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('projectSearch');
+    const sortSelect = document.getElementById('projectSort');
+    const projectCards = document.querySelectorAll('.project-card');
+
+    // Filter functionality
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            filterProjects(filter);
+        });
+    });
+
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        searchProjects(searchTerm);
+    });
+
+    // Sort functionality
+    sortSelect.addEventListener('change', function() {
+        sortProjects(this.value);
+    });
+
+    function filterProjects(filter) {
+        projectCards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            if (filter === 'all' || status === filter) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function searchProjects(searchTerm) {
+        projectCards.forEach(card => {
+            const title = card.querySelector('.project-title').textContent.toLowerCase();
+            const description = card.querySelector('.project-description').textContent.toLowerCase();
+            const technologies = card.getAttribute('data-technologies');
+            
+            if (title.includes(searchTerm) || description.includes(searchTerm) || technologies.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function sortProjects(sortBy) {
+        const projectsGrid = document.getElementById('projectsGrid');
+        const cardsArray = Array.from(projectCards);
+        
+        cardsArray.sort((a, b) => {
+            switch(sortBy) {
+                case 'title':
+                    const titleA = a.querySelector('.project-title').textContent;
+                    const titleB = b.querySelector('.project-title').textContent;
+                    return titleA.localeCompare(titleB);
+                case 'status':
+                    const statusA = a.getAttribute('data-status');
+                    const statusB = b.getAttribute('data-status');
+                    return statusA.localeCompare(statusB);
+                case 'date':
+                default:
+                    // Default sort by ID (newest first)
+                    const idA = parseInt(a.getAttribute('data-project-id'));
+                    const idB = parseInt(b.getAttribute('data-project-id'));
+                    return idB - idA;
+            }
+        });
+        
+        // Re-append sorted cards
+        cardsArray.forEach(card => projectsGrid.appendChild(card));
+    }
+});
+
+// Filter by technology function
+function filterByTechnology(event, techName) {
+    event.stopPropagation(); // Prevent card click
+    const searchInput = document.getElementById('projectSearch');
+    searchInput.value = techName.toLowerCase();
+    searchProjects(techName.toLowerCase());
+}
+
+function searchProjects(searchTerm) {
+    const projectCards = document.querySelectorAll('.project-card');
+    projectCards.forEach(card => {
+        const title = card.querySelector('.project-title').textContent.toLowerCase();
+        const description = card.querySelector('.project-description').textContent.toLowerCase();
+        const technologies = card.getAttribute('data-technologies');
+        
+        if (title.includes(searchTerm) || description.includes(searchTerm) || technologies.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

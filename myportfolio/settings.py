@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -25,19 +25,27 @@ SECRET_KEY = 'django-insecure-t&$m5m*nyz+wy2c#r8saik!7&_ta)z4mp)ct4_@gj%03j*ir72
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+# Email configuration for Gmail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'nirnayakhadka98@gmail.com'  # Your Gmail
+EMAIL_HOST_PASSWORD = 'nirnayadon'  # Gmail App Password (not your regular password)
+DEFAULT_FROM_EMAIL = 'nirnayakhadka98@gmail.com'
 
 
-# Application definition
-
+# Application definition - FIXED: Added missing required Django apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
-    'django.contrib.contenttypes',
+    'django.contrib.contenttypes',  # This was missing and causing the error
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'home',  
+    'home',  # Your custom app
 ]
 
 MIDDLEWARE = [
@@ -70,10 +78,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myportfolio.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -81,10 +87,8 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -100,30 +104,162 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",  # only if you create a global static folder
 ]
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB in memory
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB for form data
+
+# For large PDF files, you might want to increase these
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+
+# Security settings for file uploads
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+# Allowed file extensions for uploads
+ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+
+# PDF Generation settings
+PDF_REPORTS_DIR = BASE_DIR / 'reports'
+if not PDF_REPORTS_DIR.exists():
+    PDF_REPORTS_DIR.mkdir(exist_ok=True)
+
+# Admin customization
+ADMIN_SITE_HEADER = "Nirnaya's Portfolio Admin"
+ADMIN_SITE_TITLE = "Portfolio Admin"
+ADMIN_INDEX_TITLE = "Welcome to Portfolio Administration"
+
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / 'logs'
+if not LOGS_DIR.exists():
+    LOGS_DIR.mkdir(exist_ok=True)
+
+# Logging configuration for debugging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'admin.log',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.admin': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'home.admin': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Custom admin configuration
+ADMIN_REORDER = (
+    # Projects section
+    {
+        'app': 'home',
+        'label': 'Portfolio Management',
+        'models': (
+            'home.Project',
+            'home.ProjectCategory',
+            'home.Technology',
+        )
+    },
+    # Django admin
+    {
+        'app': 'auth',
+        'label': 'User Management',
+        'models': (
+            'auth.User',
+            'auth.Group',
+        )
+    },
+)
+
+# Email configuration for notifications (optional)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+
+# Session settings for better admin experience
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True
+
+# Cache configuration (optional, but recommended for better performance)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Message framework tags for better styling
+from django.contrib.messages import constants as messages
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
+
+# Security settings for production (currently disabled for development)
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Custom settings for your portfolio
+PORTFOLIO_SETTINGS = {
+    'ITEMS_PER_PAGE': 12,
+    'MAX_PROJECTS_FEATURED': 6,
+    'ALLOWED_PROJECT_STATUSES': ['planned', 'in-progress', 'completed', 'on-hold'],
+    'DEFAULT_PROJECT_IMAGE': 'projects/default.jpg',
+    'ENABLE_PROJECT_ANALYTICS': True,
+}
+
+# Date/Time formatting
+USE_L10N = True
+DATE_FORMAT = 'M d, Y'
+DATETIME_FORMAT = 'M d, Y H:i'
+
+# File upload validation
+CONTENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+MAX_UPLOAD_SIZE = 5242880  # 5MB
