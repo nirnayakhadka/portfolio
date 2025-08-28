@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,36 +22,46 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-t&$m5m*nyz+wy2c#r8saik!7&_ta)z4mp)ct4_@gj%03j*ir72'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-t&$m5m*nyz+wy2c#r8saik!7&_ta)z4mp)ct4_@gj%03j*ir72')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes', 'on')
 
-ALLOWED_HOSTS = ['*']
+# Allowed hosts for production
+ALLOWED_HOSTS = []
+allowed_hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+if allowed_hosts_str:
+    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',')]
+
+# Add your Render domain to allowed hosts
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Email configuration for Gmail
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'nirnayakhadka98@gmail.com'  # Your Gmail
-EMAIL_HOST_PASSWORD = 'nirnayadon'  # Gmail App Password (not your regular password)
-DEFAULT_FROM_EMAIL = 'nirnayakhadka98@gmail.com'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'nirnayakhadka98@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')  # Use environment variable for security
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'nirnayakhadka98@gmail.com')
 
-
-# Application definition - FIXED: Added missing required Django apps
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
-    'django.contrib.contenttypes',  # This was missing and causing the error
+    'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'home',  # Your custom app
+    'home',  
+    'django_distill',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # For serving static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,12 +92,19 @@ WSGI_APPLICATION = 'myportfolio.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+# Default to SQLite for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Use PostgreSQL if DATABASE_URL is provided (for production)
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES['default'] = dj_database_url.parse(DATABASE_URL)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -115,9 +134,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",  # only if you create a global static folder
+    BASE_DIR / "static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Static files storage for production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -125,13 +147,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Media files configuration
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB in memory
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024   # 10MB for form data
-
-# For large PDF files, you might want to increase these
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 
 # Security settings for file uploads
@@ -156,66 +176,41 @@ LOGS_DIR = BASE_DIR / 'logs'
 if not LOGS_DIR.exists():
     LOGS_DIR.mkdir(exist_ok=True)
 
-# Logging configuration for debugging
+# Logging configuration - simplified for production
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_DIR / 'admin.log',
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
         },
+    },
+    'handlers': {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
     'loggers': {
-        'django.admin': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'home.admin': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
         },
     },
 }
 
-# Custom admin configuration
-ADMIN_REORDER = (
-    # Projects section
-    {
-        'app': 'home',
-        'label': 'Portfolio Management',
-        'models': (
-            'home.Project',
-            'home.ProjectCategory',
-            'home.Technology',
-        )
-    },
-    # Django admin
-    {
-        'app': 'auth',
-        'label': 'User Management',
-        'models': (
-            'auth.User',
-            'auth.Group',
-        )
-    },
-)
-
-# Email configuration for notifications (optional)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
-
-# Session settings for better admin experience
+# Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Cache configuration (optional, but recommended for better performance)
+# Cache configuration
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -227,8 +222,7 @@ CACHES = {
     }
 }
 
-# Message framework tags for better styling
-from django.contrib.messages import constants as messages
+# Message framework tags
 MESSAGE_TAGS = {
     messages.DEBUG: 'debug',
     messages.INFO: 'info',
@@ -237,14 +231,23 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
-# Security settings for production (currently disabled for development)
+# Security settings for production
 if not DEBUG:
+    # Security settings
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    
+    # Force HTTPS in production
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Additional security headers
+    SECURE_REFERRER_POLICY = 'same-origin'
 
 # Custom settings for your portfolio
 PORTFOLIO_SETTINGS = {
@@ -263,20 +266,3 @@ DATETIME_FORMAT = 'M d, Y H:i'
 # File upload validation
 CONTENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 MAX_UPLOAD_SIZE = 5242880  # 5MB
-
-
-
-
-import environ
-
-env = environ.Env(
-    DEBUG=(bool, False)
-)
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env('DEBUG')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
-DATABASES = {
-    'default': env.db()  # parses DATABASE_URL
-}
